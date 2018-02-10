@@ -97,7 +97,7 @@ def homeplug_reboot(homeplug_ip, user, password):
     if reboot.status_code == "200":
         print("XWN5001 rebooting...")
     else:
-        print("Error rebooting XWN5001.")
+        print("Error rebooting XWN5001. Status code:", reboot.status_code)
 
 
 def router_reboot(reboot_url, cookies, user, password):
@@ -106,6 +106,6 @@ def router_reboot(reboot_url, cookies, user, password):
     if reboot.status_code == "200":
         print("Router rebooting...")
     else:
-        print("Error rebooting router.")
+        print("Error rebooting router. Status code:", reboot.status_code)
 
     return reboot
