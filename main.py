@@ -15,7 +15,7 @@ Non-standard dependencies: BeautifulSoup; netifaces.
 
 """
 
-import requests
+import requests, sys
 from requests.auth import HTTPBasicAuth
 from functions import check, get_homeplug_ip, get_dhcp_data, get_my_ip, homeplug_reboot, router_reboot
 from Secrets.secrets import *
@@ -24,17 +24,29 @@ base_url = "http://" + router_ip
 reboot_url = base_url + "/cgi-bin/MAINTENANCE/reboot_wait.asp"
 dhcp_table_url = base_url + "/cgi-bin/SETUP/sp_lan.asp"
 ip_info_cgi = base_url + "/cgi-bin/get/SETUP/sp_lan.cgi"
+no_conf = False
 
 running = True
 
 while running:
+
+    # Check for command line arguments
+    if len(sys.argv) != 1:
+        if sys.argv[1] == "--noconf":
+            no_conf = True
+            print("No confirmation mode enabled.")
+
+        else:
+            print("Unrecognised command line argument. Exiting.")
+            break
+
 
     run1 = requests.get(base_url)
 
     # Check that this is the right network
     if run1.headers["WWW-Authenticate"] != 'Basic realm="DSL-3780"':
         print("Not on DSL-3780 network")
-        running = False
+        break
 
     # If it's the right network, save the cookie and log in to the router
     else:
@@ -50,7 +62,10 @@ while running:
             homeplug_ip = get_homeplug_ip(dhcp_data)
             local_ip = get_my_ip(dhcp_data)
 
-            confirm = input("Are you sure you want to reboot? Type 'Yes' or 'No'")
+            if no_conf:
+                confirm = "yes"
+            else:
+                confirm = input("Are you sure you want to reboot? Type 'Yes' or 'No'")
 
             if confirm.lower() == "yes":
                 # If connecting via the HomePlug, reboot the router first and then the HomePlug
@@ -65,12 +80,12 @@ while running:
                     homeplug_reboot(homeplug_ip, hp_user, hp_password)
                     router_reboot(reboot_url, cookies, user, password)
 
-                running = False
+                break
 
             if confirm.lower() == "no":
                 print("Cancelling without rebooting.")
-                running = False
+                break
 
         else:
             print("Error authenticating with router. Stopping!")
-            running = False
+            break
